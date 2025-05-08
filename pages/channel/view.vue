@@ -26,7 +26,6 @@ import { reactive, watch, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { FindChannels } from '@/service/http/channel.js';
 import ChannelCard from './components/channel.vue';
-import { onShareAppMessage } from '@dcloudio/uni-app'
 
 onLoad((options) => {
 	if (options?.deviceId) {
@@ -67,14 +66,6 @@ watch(
 	},
 	{ immediate: true }
 );
-
-onShareAppMessage(() => {
-	return {
-		title: 'EasyNVR 通道',
-		path: '/pages/channel/view',
-		imageUrl: '',
-	};
-});
 </script>
 
 <style></style>

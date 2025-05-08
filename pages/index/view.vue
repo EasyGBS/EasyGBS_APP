@@ -48,7 +48,6 @@ import Search from './components/search.vue';
 import DeviceCard from './components/device.vue';
 import { FindDeviceList } from '@/service/http/device.js';
 import { GetNavBarHeight } from '@/service/utils/utils.js';
-import { onShareAppMessage } from '@dcloudio/uni-app'
 
 const deviceData = ref([]);
 const deviceTotal = ref(0);
@@ -158,12 +157,4 @@ const getHeight = () => {
 	const height = GetNavBarHeight();
 	titleHeight.value = height + 100;
 };
-
-onShareAppMessage(() => {
-  return {
-    title: 'EasyNVR 首页',
-    path: '/pages/index/view',
-    imageUrl: ''
-  };
-});
 </script>

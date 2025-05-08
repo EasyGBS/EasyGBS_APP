@@ -47,9 +47,8 @@ const handleClick = async () => {
 	loading.value = true;
 	try {
 		const url = await findUrl();
-		const encodedUrl = encodeURIComponent(url);
 		uni.navigateTo({
-		  url: `/pages/play/view?url=${encodedUrl}&channelId=${props.item.id}&deviceId=${props.deviceId}`,
+			url: `/pages/play/view?url=${url}&channelId=${props.item.id}&deviceId=${props.deviceId}`,
 		});
 	} catch (error) {
 		console.error('请求 Live 失败：', error);

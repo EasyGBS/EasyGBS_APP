@@ -4,7 +4,7 @@
 			<Snapshot :id="item.channel_id" :is-device="false" />
 		</view>
 
-		<view class="p-2 flex justify-between items-center">
+		<view class="p-3 flex justify-between items-center">
 			<text class="w-18 truncate">
 				{{ item.name || item.channel_id }}
 			</text>

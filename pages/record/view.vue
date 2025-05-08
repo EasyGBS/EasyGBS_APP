@@ -1,85 +1,108 @@
 <template>
-  <view>
-    <view class="bg-white">
-      <Navigation title="录像" />
-    </view>
-    <scroll-view
-      :style="scrollViewStyle"
-      scroll-y
-      :refresher-enabled="true"
-      :refresher-threshold="200"
-      :refresher-triggered="refresherTriggered"
-      @refresherrefresh="onRefresh"
-    >
-      <!-- 骨架屏：初次加载时显示 -->
-      <wd-skeleton
-        v-if="loading && !refresherTriggered"
-        animation="gradient"
-        theme="paragraph"
-        :rows="5"
-      />
+	<view>
+		<view class="bg-white">
+			<Navigation title="录像" />
+		</view>
+		<scroll-view
+			:style="scrollViewStyle"
+			scroll-y
+			refresher-enabled="true"
+			:refresher-threshold="200"
+			:refresher-background="refresherBackground"
+			:refresher-triggered="refresherTriggered"
+			@refresherrefresh="onRefresh"
+			@scrolltolower="onScrolltolower"
+		>
+			<!-- 骨架屏（仅在初次加载且非刷新状态时显示） -->
+			<wd-skeleton
+				v-if="loading && !refresherTriggered"
+				animation="gradient"
+				theme="paragraph"
+				:rows="5"
+			/>
 
-      <!-- 数据列表 -->
-      <view class="grid grid-cols-2 gap-2 p-3" v-else>
-        <RecordItem
-          v-for="item in recrodData"
-          :key="item.bid"
-          :item="item"
-        />
-      </view>
-    </scroll-view>
-  </view>
+			<!-- 数据列表 -->
+			<view class="grid grid-cols-2 gap-2 p-3" v-else>
+				<RecordItem
+					v-for="item in recrodData"
+					:key="item.bid"
+					:item="item"
+				/>
+			</view>
+
+			<!-- 加载更多指示 -->
+			<view v-if="loadingMore" class="text-center py-3">加载中...</view>
+		</scroll-view>
+	</view>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import Navigation from '@/components/navigation/navigation.vue'
-import { FindRecords } from '@/service/http/record.js'
-import RecordItem from './components/record.vue'
-import { GetNavBarHeight } from '@/service/utils/utils.js'
-import { onShareAppMessage } from '@dcloudio/uni-app'
+import { ref, onMounted, computed } from 'vue';
+import Navigation from '@/components/navigation/navigation.vue';
+import { FindRecords } from '@/service/http/record.js';
+import RecordItem from './components/record.vue';
+import { GetNavBarHeight } from '@/service/utils/utils.js';
 
-// 状态
-const recrodData       = ref([])
-const loading          = ref(false)
-const refresherTriggered = ref(false)
-const titleHeight      = ref(0)
+// 响应式数据
+const recrodData = ref([]);
+const loading = ref(false);
+const loadingMore = ref(false);
+const refresherTriggered = ref(false);
+const titleHeight = ref(0);
 
-// 计算 scroll-view 高度
-const scrollViewStyle = computed(() => `height: calc(100vh - ${titleHeight.value}px);`)
+// 分页控制
+const pagination = ref({
+	page: 1,
+	size: 10,
+});
 
-// 获取全部记录（无分页）
-const findRecordList = async () => {
-  loading.value = true
-  const res = await FindRecords()
-  recrodData.value = res.items
-  loading.value = false
-}
+// 动态计算 scroll-view 的高度
+const scrollViewStyle = computed(() => {
+	return `height: calc(100vh - ${titleHeight.value}px);`;
+});
 
-// 下拉刷新处理
+// 获取记录列表
+const findRecordList = async (isRefresh = false) => {
+	if (!isRefresh) {
+		loading.value = true;
+	}
+	const res = await FindRecords(pagination.value);
+	if (pagination.value.page === 1) {
+		recrodData.value = res.items;
+	} else {
+		recrodData.value = [...recrodData.value, ...res.items];
+	}
+	if (!isRefresh) {
+		loading.value = false;
+	}
+};
+
+// 监听滚动到底部加载更多
+const onScrolltolower = async () => {
+	if (loadingMore.value || recrodData.value.length >= 100) return;
+	loadingMore.value = true;
+	pagination.value.page += 1;
+	await findRecordList();
+	loadingMore.value = false;
+};
+
 const onRefresh = async () => {
-  refresherTriggered.value = true
-  await findRecordList()
-  // 给下拉刷新动画一点时间
-  await new Promise(r => setTimeout(r, 500))
-  refresherTriggered.value = false
-}
+	refresherTriggered.value = true;
+	pagination.value.page = 1;
+	await findRecordList(true);
+	await new Promise((resolve) => setTimeout(resolve, 1000));
+	refresherTriggered.value = false;
+};
 
 // 获取导航栏高度
 const getHeight = () => {
-  titleHeight.value = GetNavBarHeight() + 40
-}
+	const height = GetNavBarHeight();
+	titleHeight.value = height + 40;
+};
 
 // 初始化
 onMounted(() => {
-  getHeight()
-  findRecordList()
-})
-
-// 分享配置
-onShareAppMessage(() => ({
-  title: 'EasyNVR 录像',
-  path: '/pages/record/view',
-  imageUrl: ''
-}))
+	findRecordList();
+	getHeight();
+});
 </script>

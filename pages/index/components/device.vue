@@ -1,5 +1,5 @@
 <template>
-	<view class="rounded-lg bg-white p-2 h-full box-border" @tap="handleClick">
+	<view class="rounded-lg bg-white p-2" @tap="handleClick">
 		<view class="flex justify-between items-center">
 			<text class="truncate pr-2 font-semibold">
 				{{ item.name || item.id }}
@@ -25,7 +25,7 @@
 		</view>
 
 		<view class="info-container">
-			<text class="text-gray-400 text-sm pr-4 truncate">
+			<text class="text-gray-400 text-sm pr-4">
 				{{ item.ip }}
 			</text>
 			<text class="text-gray-400 text-sm">

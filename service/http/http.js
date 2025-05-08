@@ -19,7 +19,6 @@ const neglectUrl = ['/configs/info/web', '/stats']; // 需要忽略错误处理�
 
 // 统一请求封装
 const request = (url, method = 'GET', data = {}, options = {}) => {
-	console.log('>>请求地址>>', url);
 	return new Promise((resolve, reject) => {
 		uni.request({
 			url: GetRemoteUrl() + url,
