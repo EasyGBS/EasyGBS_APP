@@ -1,0 +1,16 @@
+node_modules
+demo
+dist
+*.zip
+*.rar
+*.tar.gz
+unpackage
+
+platforms/android/
+platforms/ios/
+*.keystore
+*.jks
+
+.DS_Store
+
+Thumbs.db

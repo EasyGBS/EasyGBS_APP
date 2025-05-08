@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>录像</title>
+		<!-- 引入 moment.js（用于时间格式化） -->
+		<script type="text/javascript" src="https://momentjs.com/downloads/moment.js"></script>
+		<style>
+			* {
+				box-sizing: border-box;
+			}
+
+			html,
+			body {
+				margin: 0;
+				padding: 0;
+				height: 100%;
+			}
+
+			/* 整体布局：上部视频，下部时间轴 */
+			.wrapper {
+				display: flex;
+				flex-direction: column;
+				height: 100vh;
+			}
+
+			/* 视频区域：保持16:9比例 */
+			.video-container {
+				background-color: black;
+				aspect-ratio: 16 / 9;
+				flex-shrink: 0;
+			}
+
+			/* 时间轴区域：填充剩余高度 */
+			.timeline-wrapper {
+				flex: 1;
+				overflow: hidden;
+			}
+
+			/* 底部容器：让时间轴和日历并排 */
+			.bottom-container {
+				display: flex;
+				/* 横向排布 */
+				flex: 1;
+				/* 占满剩余空间 */
+				overflow: hidden;
+				/* 如果需要滚动或截断，可根据需求设置 */
+			}
+
+			/* 时间轴外层容器 */
+			.container {
+				position: relative;
+				width: 120px;
+				height: 100%;
+				/* 占满父容器 */
+				overflow: hidden;
+				border: 1px solid #e2e8f0;
+				border-radius: 4px;
+				background-color: #f7fafc;
+				box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+			}
+
+			/* 滚动区域 */
+			.scroll-container {
+				height: 100%;
+				overflow-y: auto;
+				scroll-behavior: smooth;
+			}
+
+			/* 时间轴内容：总高度 2880px（24小时 * 120px/小时） */
+			.timeline-content {
+				position: relative;
+				height: 2880px;
+			}
+
+			/* 中心虚线 */
+			.center-line {
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				right: 10px;
+				transform: translateX(-50%);
+				border-left: 1px dashed #cbd5e0;
+			}
+
+			/* 刻度线：tick 的高度固定为0 */
+			.tick {
+				position: absolute;
+				left: 5px;
+				height: 0;
+			}
+
+			.tick-line {
+				display: inline-block;
+				vertical-align: middle;
+			}
+
+			.tick-line.major {
+				border-top: 1px solid #8ea3b8;
+				width: 30px;
+				margin-right: 4px;
+			}
+
+			.tick-line.minor {
+				border-top: 1px solid #8ea3b8;
+				width: 15px;
+			}
+
+			.tick-label {
+				position: absolute;
+				left: 40px;
+				top: 3px;
+				white-space: nowrap;
+				color: #45627f;
+				font-size: 14px;
+			}
+
+			/* 录像段 */
+			.segment {
+				position: absolute;
+				background-color: #f8dc42;
+				border-radius: 2px;
+			}
+
+			/* Marker：不受 marker 气泡文字大小影响 */
+			.marker {
+				position: absolute;
+				left: 0px;
+				cursor: pointer;
+				user-select: none;
+				visibility: hidden;
+				/* 待加载后显示 */
+				display: flex;
+				align-items: center;
+			}
+
+			.marker-line {
+				width: 120px;
+				height: 2px;
+				background-color: #056df4;
+			}
+
+
+			/* Marker 气泡：绝对定位于 marker 上方 */
+			.marker-bubble {
+				position: absolute;
+				left: 60px;
+				transform: translateX(-50%);
+				background-color: #056df4;
+				color: white;
+				border-radius: 9999px;
+				padding: 8px 12px;
+				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+				white-space: nowrap;
+				width: 78px;
+				/* 固定宽度 */
+				text-align: center;
+			}
+
+
+			/* 日历 */
+			.calendarContainer {
+				width: 70px;
+				padding: 6px;
+				background-color: #f7fafc;
+			}
+
+			.dateList {
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+				overflow-y: auto;
+				height: 100%;
+				align-items: center;
+			}
+
+			.dateItem {
+				cursor: pointer;
+				padding: 2px;
+				width: 40px;
+				height: 40px;
+				margin: 4px 0;
+				text-align: center;
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.dateItem.active {
+				background-color: #056df4;
+				color: white;
+			}
+
+			/* 选择日历 */
+			.dropdownItem {
+				cursor: pointer;
+				padding: 12px 2px;
+				width: 80px;
+			}
+
+			.dropdownList {
+				position: absolute;
+				top: 100%;
+				left: 50%;
+				text-align: center;
+				background: #fff;
+				z-index: 1000;
+				max-height: 300px;
+				overflow-y: auto;
+			}
+
+			.selected {
+				cursor: pointer;
+				width: 60px;
+				height: 40px;
+				text-align: center;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin-bottom: 8px;
+			}
+
+			/* 全局加载中遮罩层样式 */
+			#global-loading {
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 150px;
+				height: 150px;
+				background: rgba(0, 0, 0, 0.5);
+				color: #fff;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-size: 18px;
+				z-index: 9999;
+				border-radius: 12px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<!-- 全局加载中提示 -->
+		<div id="global-loading">加载中...</div>
+
+
+		<div class="wrapper">
+			<!-- 视频区域 -->
+			<div class="video-container">
+				<video style="width:100%;height: 100%;"
+					poster="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5Ij48cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iOSIgc3R5bGU9ImZpbGw6bGlnaHRncmF5OyIvPjwvc3ZnPg=="
+					playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5"
+					x5-video-player-fullscreen="false" x-webkit-airplay="allow" id="record-player" autoplay
+					controls></video>
+			</div>
+
+			<!-- 底部容器：横向排布时间轴和日历 -->
+			<div class="bottom-container">
+				<!-- 日历区域 -->
+				<div class="calendarContainer"></div>
+				<!-- 时间轴区域 -->
+				<div class="timeline-wrapper">
+					<div id="timelineContainer" class="container"></div>
+					<p id="currentTimeDisplay">当前时间: --:--</p>
+				</div>
+			</div>
+		</div>
+		<script>
+			var fullScreenOfAndroid = function() {
+				// 最新5+API的支持
+				var self = plus.webview.currentWebview();
+				self.setStyle({
+					videoFullscreen: 'landscape'
+				});
+			};
+			// iOS平台的视频全屏旋转
+			var fullScreenOfIos = function(videoElem) {
+				// 监听的事件与Android平台有很大区别
+				videoElem.addEventListener('webkitbeginfullscreen', function() {
+					plus.screen.lockOrientation('landscape'); //锁死屏幕方向为横屏
+				});
+				videoElem.addEventListener('webkitendfullscreen', function() {
+					plus.screen.unlockOrientation(); //解除屏幕方向的锁定
+				});
+			};
+			// // 涉及到5+API的内容，均在plusready事件后调用；
+			document.addEventListener('plusready', function() {
+
+				var osName = plus.os.name;
+				if (osName === 'Android') {
+					fullScreenOfAndroid();
+				} else if (osName === 'iOS') {
+					var videoElem = document.getElementById('video');
+					fullScreenOfIos(videoElem);
+				}
+			});
+		</script>
+
+
+		<script>
+			// 获取当前URL
+			const urlParams = new URLSearchParams(window.location.search);
+			// 获取具体的参数
+			const channelId = urlParams.get('channelId');
+			const deviceId = urlParams.get('deviceId');
+			const token = urlParams.get('token');
+			const baseUrl = urlParams.get('baseUrl');
+
+			// 获取有录像的天数 参数是月份默认 YYYYMM 默认当月
+			let recordMonth = moment().format('YYYYMM');
+
+
+			// 获取录像时间轴开始 结束 毫秒时间戳 默认当天的 起始时间 00:00:00 结束时间 23:59:59
+			let recordDay = moment().format('YYYYMMDD');
+			let startTime = new Date().setHours(0, 0, 0, 0);
+			let endTime = new Date().setHours(23, 59, 59, 999);
+			const videoElement = document.getElementById("record-player");
+			// 页面加载完成后隐藏全局加载提示
+			showLoading();
+			window.addEventListener('load', function() {
+				hideLoading();
+			});
+
+			// 监听点击事件，用户点击后显示控制条
+
+			// 页面初始化加载
+			window.onload = function() {
+				renderMonthDropdown();
+				getRecordDays();
+
+				// updatePlayback(e.target.value);
+			};
+
+			// ---------------------------
+			// 播放器代码
+			// --------------------------- 
+			// 状态管理
+			let state = {
+				videoUrls: [],
+				currentIndex: 0,
+				seekTime: 0,
+				player: null
+			};
+
+
+			// 加载视频
+			function loadVideo() {
+				if (state.videoUrls.length === 0 || !state.videoUrls[state.currentIndex]) return;
+				videoElement.src = SplicBaseUrlToRemoteUrl(state.videoUrls[state.currentIndex]);
+				videoElement.load();
+				videoElement.addEventListener("loadedmetadata", function onLoaded() {
+					if (state.seekTime > 0) {
+						videoElement.currentTime = state.seekTime;
+					}
+					videoElement.removeEventListener("loadedmetadata", onLoaded);
+				});
+				videoElement.play().catch(err => console.error("播放错误:", err));
+			}
+
+			videoElement.addEventListener("timeupdate", () => {
+				if (videoElement.currentTime >= videoElement.duration) {
+					if (state.currentIndex < state.videoUrls.length - 1) {
+						state.currentIndex++;
+						state.seekTime = 0;
+						loadVideo();
+					} else {
+						alert("已经播放完所有视频");
+					}
+				}
+			});
+
+			// 时间匹配算法
+			function findMatchingIndex(targetTime) {
+				const targetDate = new Date(targetTime).getTime();
+				console.log('>>targetDate', targetDate);
+				for (let i = 0; i < state.videoUrls.length; i++) {
+					const match = state.videoUrls[i].match(/\/(\d{14})-(\d+)\.mp4$/);
+					if (!match) continue;
+
+					const [_, startStr, duration] = match;
+					const startDate = parseStartTime(startStr);
+					const endDate = startDate + parseInt(duration, 10);
+
+					if (targetDate >= startDate && targetDate < endDate) {
+						return {
+							index: i,
+							offset: Math.floor((targetDate - startDate) / 1000)
+						};
+					}
+				}
+				return {
+					index: -1,
+					offset: 0
+				};
+			}
+
+			// 解析时间字符串
+			function parseStartTime(str) {
+				return new Date(
+					str.substr(0, 4), // 年
+					str.substr(4, 2) - 1, // 月
+					str.substr(6, 2), // 日
+					str.substr(8, 2), // 时
+					str.substr(10, 2), // 分
+					str.substr(12, 2) // 秒
+				).getTime();
+			}
+
+			// 更新播放位置
+			function updatePlayback(time) {
+				const result = findMatchingIndex(time);
+				if (result.index === -1) {
+					console.log('未找到匹配视频');
+					return;
+				}
+
+				state.currentIndex = result.index;
+				state.seekTime = result.offset;
+				loadVideo();
+			}
+
+			// ---------------------------
+			// 1. 获取有录像的天数
+			// ---------------------------
+			async function getRecordDays() {
+				showLoading();
+				const url = `${baseUrl}/records/months?channel_id=${channelId}&source=CLOUD&dates=${recordMonth}`;
+				try {
+					const data = await GetFetch(url);
+					const result = [];
+					for (const [key, days] of Object.entries(data)) {
+						for (let i = 0; i < days.length; i++) {
+							if (days[i] === '1') {
+								const date = i + 1;
+								const paddedDate = date.toString().padStart(2, '0');
+								result.push({
+									name: date,
+									value: parseInt(`${key}${paddedDate}`)
+								});
+							}
+						}
+					}
+					if (!result.length) {
+						console.log('当前月份无录像');
+						renderDateList([]);
+						return;
+					}
+					recordDay = result[result.length - 1].value;
+					startTime = moment(recordDay, "YYYYMMDD", true).startOf('day').valueOf();
+					endTime = moment(recordDay, "YYYYMMDD", true).endOf('day').valueOf();
+					getRecordTimeline();
+					getRecordList();
+					renderDateList(result);
+				} catch (error) {
+					console.error('请求失败', error);
+				} finally {
+					hideLoading();
+				}
+			}
+
+			// 生成月份选择栏，点击按钮时触发回调函数（参数：当前年份和选中的月份）
+			function renderMonthDropdown() {
+				const calendarContainer = document.querySelector('.calendarContainer');
+
+				const dropdownContainer = document.createElement('div');
+				dropdownContainer.className = 'monthDropdown';
+				dropdownContainer.style.position = 'relative';
+				dropdownContainer.style.display = 'inline-block';
+
+				const currentYear = moment().year();
+				const currentMonth = moment().month() + 1;
+				const lastYear = currentYear - 1;
+
+				let selectedYear = currentYear;
+				let selectedMonth = currentMonth;
+
+				const selectedDisplay = document.createElement('div');
+				selectedDisplay.className = 'selected';
+				selectedDisplay.textContent = `${selectedMonth}月`;
+				dropdownContainer.appendChild(selectedDisplay);
+
+				const dropdownList = document.createElement('div');
+				dropdownList.className = 'dropdownList';
+				dropdownList.style.display = 'none';
+				const years = [currentYear, lastYear];
+				years.forEach(year => {
+					for (let m = 1; m <= 12; m++) {
+						const option = document.createElement('div');
+						option.className = 'dropdownItem';
+						option.textContent = `${year % 100}年${m}月`;
+						option.dataset.year = year;
+						option.dataset.month = m;
+						option.addEventListener('click', () => {
+							selectedYear = parseInt(option.dataset.year, 10);
+							selectedMonth = parseInt(option.dataset.month, 10);
+							selectedDisplay.textContent = `${selectedMonth}月`;
+							dropdownList.style.display = 'none';
+							const month = `${selectedYear}${selectedMonth.toString().padStart(2, '0')}`;
+							recordMonth = month;
+							getRecordDays();
+						});
+						// 鼠标悬停样式
+						option.addEventListener('mouseover', () => {
+							option.style.backgroundColor = '#f0f0f0';
+						});
+						option.addEventListener('mouseout', () => {
+							option.style.backgroundColor = '#fff';
+						});
+						dropdownList.appendChild(option);
+					}
+				});
+
+				dropdownContainer.appendChild(dropdownList);
+
+				selectedDisplay.addEventListener('click', (event) => {
+					event.stopPropagation();
+					dropdownList.style.display = dropdownList.style.display === 'none' ? 'block' : 'none';
+				});
+
+				document.addEventListener('click', (event) => {
+					if (!dropdownContainer.contains(event.target)) {
+						dropdownList.style.display = 'none';
+					}
+				});
+
+				calendarContainer.insertBefore(dropdownContainer, calendarContainer.firstChild);
+			}
+
+
+			// 日期列表 DOM 渲染
+			function renderDateList(data) {
+				// 清空旧的日期列表
+				const dateListContainer = document.querySelector('.dateList');
+				if (dateListContainer) {
+					dateListContainer.remove();
+				}
+				const calendarContainer = document.querySelector('.calendarContainer');
+				const dateList = document.createElement('div');
+				dateList.className = 'dateList';
+				data.sort((a, b) => parseInt(b.value) - parseInt(a.value));
+				data.forEach(item => {
+					const dateItem = document.createElement('div');
+					dateItem.className = 'dateItem';
+					dateItem.textContent = item.name;
+
+					if (recordDay === item.value) {
+						dateItem.classList.add('active');
+					}
+
+					dateItem.addEventListener('click', () => {
+						// 清除所有日期项的 active 类
+						document.querySelectorAll('.dateItem').forEach(item => {
+							item.classList.remove('active');
+						});
+						// 给当前点击项添加 active 类
+						dateItem.classList.add('active');
+
+						recordDay = item.value;
+						startTime = moment(recordDay, "YYYYMMDD", true) // true 表示严格模式
+							.startOf('day').valueOf();
+						endTime = moment(recordDay, "YYYYMMDD", true)
+							.endOf('day').valueOf();
+						getRecordTimeline();
+						getRecordList();
+					});
+					dateList.appendChild(dateItem);
+				});
+				calendarContainer.appendChild(dateList);
+			}
+
+			// ---------------------------
+			// 2. 获取录像时间轴
+			// ---------------------------
+			function getRecordTimeline() {
+				const url =
+					`${baseUrl}/records/timeline?channel_id=${channelId}&source=CLOUD&start=${startTime}&end=${endTime}`
+
+				GetFetch(url).then(data => {
+					intervalArray = calculateSegments(data.items)
+					const time = moment(intervalArray[0].beginTime, "HH:mm:ss");
+					handlebarTime = time.hours() * 60 + time.minutes();
+					renderSegments();
+					updateMarker();
+					const containerHeight = scrollContainer.clientHeight;
+					const markerPosition = (TOTAL_MINUTES - handlebarTime) * PX_PER_MINUTE;
+					const targetScrollTop = Math.max(
+						0,
+						Math.min(
+							markerPosition - containerHeight / 2,
+							TIMELINE_HEIGHT - containerHeight
+						)
+					);
+					scrollContainer.scrollTop = targetScrollTop;
+				});
+			}
+
+			// 计算时间轴区间
+			function calculateSegments(data) {
+				const segments = [];
+				const lastFlag = {
+					start: 0,
+					end: 0
+				};
+
+				for (const item of data) {
+					const start = item.start;
+					const end = start + item.duration;
+					if (lastFlag.end === 0) {
+						lastFlag.start = start;
+						lastFlag.end = end;
+					} else if (within60Seconds(lastFlag.end, start)) {
+						lastFlag.end = end;
+					} else {
+						segments.push(formatSegment(lastFlag.start, lastFlag.end));
+						lastFlag.start = start;
+						lastFlag.end = end;
+					}
+				}
+
+				if (lastFlag.start > 0)
+					segments.push(formatSegment(lastFlag.start, lastFlag.end));
+
+				return segments;
+			}
+
+			function within60Seconds(timestamp1, timestamp2) {
+				const difference = Math.abs(timestamp1 - timestamp2);
+				return difference <= 10000;
+			}
+
+			function formatSegment(startTimestamp, endTimestamp) {
+				const todayStart = moment(recordDay, "YYYYMMDD", true).startOf('day');
+				let startMoment = moment(startTimestamp);
+				const endMoment = moment(endTimestamp);
+
+				if (startMoment.isBefore(todayStart)) {
+					startMoment = todayStart.clone();
+				}
+
+				return {
+					beginTime: startMoment.format('HH:mm:ss'),
+					endTime: endMoment.format('HH:mm:ss'),
+				};
+			}
+
+			// ---------------------------
+			// 3. 获取录像列表
+			// ---------------------------
+			function getRecordList() {
+				const url =
+					`${baseUrl}/records?channel_id=${channelId}&source=CLOUD&start=${startTime}&end=${endTime}&&ssrc=PcIlkK4b6c5kr_01_9769054a95554645a5ed`;
+				GetFetch(url).then(data => {
+					GetFetch(SplicBaseUrlToRemoteUrl(data.url)).then(data => {
+						state.videoUrls = data.items || [];
+						loadVideo();
+					});
+				});
+			}
+
+			// ---------------------------
+			// 统一 fetch 函数
+			// ---------------------------
+			async function GetFetch(url) {
+				try {
+					const response = await fetch(url, {
+						method: 'GET',
+						headers: {
+							'Content-Type': 'application/json',
+							'authorization': `Bearer ${token}`
+						}
+					});
+					if (!response.ok) {
+						throw new Error(`HTTP error! Status: ${response.status}`);
+					}
+					return await response.json();
+				} catch (error) {
+					console.error('Error:', error);
+				}
+			}
+
+			// ---------------------------
+			// 1. 时间转换工具（处理 HH:mm:ss 格式）
+			// ---------------------------
+			function parseTimeStr(timeStr) {
+				timeStr = timeStr.trim();
+				const [hh, mm, ss] = timeStr.split(":").map(Number);
+				return hh * 60 + mm + (ss ? ss / 60 : 0);
+			}
+			// 格式化：将分钟数转换为 "HH:mm"
+			function formatTime(minutes) {
+				return moment({
+					hour: Math.floor(minutes / 60),
+					minute: Math.floor(minutes % 60)
+				}).format("HH:mm");
+			}
+
+			// ---------------------------
+			// 2. 录像区间数据（同一天内，HH:mm:ss 格式）
+			// ---------------------------
+			let intervalArray = [
+				// 示例数据（可根据需要添加录像区间）
+				// { beginTime: "08:00:00", endTime: "08:30:00" },
+				// { beginTime: "10:15:00", endTime: "11:00:00" },
+			];
+
+			function parseSegments(arr) {
+				return arr.map(item => ({
+					start: parseTimeStr(item.beginTime),
+					end: parseTimeStr(item.endTime)
+				}));
+			}
+			const segments = parseSegments(intervalArray);
+
+			// ---------------------------
+			// 3. 时间轴配置
+			// ---------------------------
+			const HOURS = 24;
+			const TOTAL_MINUTES = HOURS * 60; // 1440分钟
+			const PX_PER_HOUR = 120; // 每小时 120px
+			const PX_PER_MINUTE = PX_PER_HOUR / 60; // 2px/分钟
+			const TIMELINE_HEIGHT = HOURS * PX_PER_HOUR; // 2880px
+			const CONTAINER_WIDTH = 140;
+			const CENTER_X = CONTAINER_WIDTH / 2;
+
+			// 默认选中时间：08:00 => 480分钟
+			let handlebarTime = 480;
+			let isDragging = false;
+
+			// ---------------------------
+			// 4. 创建 DOM 结构
+			// ---------------------------
+			const container = document.getElementById("timelineContainer");
+			const scrollContainer = document.createElement("div");
+			scrollContainer.className = "scroll-container";
+			// 高度采用容器父级高度
+			scrollContainer.style.height = container.parentElement.clientHeight + "px";
+			container.appendChild(scrollContainer);
+
+			const timelineContent = document.createElement("div");
+			timelineContent.className = "timeline-content";
+			timelineContent.style.height = TIMELINE_HEIGHT + "px";
+			scrollContainer.appendChild(timelineContent);
+
+			// 中心虚线（保持不变）
+			const centerLine = document.createElement("div");
+			centerLine.className = "center-line";
+			timelineContent.appendChild(centerLine);
+
+			// ---------------------------
+			// 5. 绘制录像区间（倒置显示）
+			// ---------------------------
+			const segmentsContainer = document.createElement("div");
+			timelineContent.appendChild(segmentsContainer);
+			segments.forEach(seg => {
+				const segDiv = document.createElement("div");
+				segDiv.className = "segment";
+				// 计算：顶部位置 = (TOTAL_MINUTES - seg.end) * PX_PER_MINUTE
+				const segTop = (TOTAL_MINUTES - seg.end) * PX_PER_MINUTE;
+				// 高度保持不变
+				const segHeight = (seg.end - seg.start) * PX_PER_MINUTE;
+				segDiv.style.top = segTop + "px";
+				segDiv.style.right = "0"; // 右侧显示
+				segDiv.style.width = "10px";
+				segDiv.style.height = Math.max(segHeight, 2) + "px";
+				segmentsContainer.appendChild(segDiv);
+			});
+
+			// ---------------------------
+			// 6. 绘制刻度线（倒置，每15分钟一个刻度）
+			// ---------------------------
+			const ticksContainer = document.createElement("div");
+			timelineContent.appendChild(ticksContainer);
+			for (let m = 0; m <= TOTAL_MINUTES; m += 15) {
+				const tickDiv = document.createElement("div");
+				tickDiv.className = "tick";
+				// 计算位置：直接用 m * PX_PER_MINUTE，即 m=0在顶部，m=1440在底部
+				tickDiv.style.top = (m * PX_PER_MINUTE) + "px";
+				if (m % 60 === 0) {
+					const line = document.createElement("div");
+					line.className = "tick-line major";
+					tickDiv.appendChild(line);
+					const label = document.createElement("span");
+					label.className = "tick-label";
+					// 实际时间 = TOTAL_MINUTES - m
+					const timeValue = TOTAL_MINUTES - m;
+					// 当 m==0 时，timeValue==1440 显示 24:00；当 m==1440 时，timeValue==0 显示 00:00
+					label.textContent = timeValue === TOTAL_MINUTES ? "24:00" : formatTime(timeValue);
+					tickDiv.appendChild(label);
+				} else {
+					const line = document.createElement("div");
+					line.className = "tick-line minor";
+					tickDiv.appendChild(line);
+				}
+				ticksContainer.appendChild(tickDiv);
+			}
+
+			// ---------------------------
+			// 7. 红色 marker（拖拽 marker）
+			// ---------------------------
+			const marker = document.createElement("div");
+			marker.className = "marker";
+			marker.setAttribute("data-draggable", "true");
+			timelineContent.appendChild(marker);
+
+			const markerLine = document.createElement("div");
+			markerLine.className = "marker-line";
+			marker.appendChild(markerLine);
+
+			const markerBubble = document.createElement("div");
+			markerBubble.className = "marker-bubble";
+			marker.appendChild(markerBubble);
+
+			// ---------------------------
+			// 8. 测量 marker 高度并初始化
+			// ---------------------------
+			window.addEventListener("load", () => {
+				marker.style.visibility = "visible";
+				updateMarker();
+			});
+
+			// ---------------------------
+			// 9. 更新 marker 位置及回调（倒置）
+			// ---------------------------
+			function updateMarker() {
+				const markerHeight = marker.offsetHeight;
+				// 根据倒置映射：marker 顶部 = (TOTAL_MINUTES - handlebarTime) * PX_PER_MINUTE，调整 marker 居中或根据需求加偏移
+				const markerTop = (TOTAL_MINUTES - handlebarTime) * PX_PER_MINUTE - markerHeight / 2;
+				marker.style.top = markerTop + 11 + "px";
+				markerBubble.textContent = formatTime(handlebarTime);
+				document.getElementById("currentTimeDisplay").textContent =
+					"当前时间: " + formatTime(handlebarTime);
+
+				if (typeof window.onTimeChange === "function") {
+					window.onTimeChange(formatTime(handlebarTime), handlebarTime);
+				}
+			}
+
+			// ---------------------------
+			// 10. 拖拽与自动滚动（倒置）
+			// ---------------------------
+			const autoScrollThreshold = 30;
+			const autoScrollStep = 10;
+
+			function handleDragMove(clientY) {
+				const rect = scrollContainer.getBoundingClientRect();
+				let newY = clientY - rect.top + scrollContainer.scrollTop;
+				newY = Math.max(0, Math.min(newY, TIMELINE_HEIGHT));
+				// 反转计算：实际时间 = TOTAL_MINUTES - (newY / PX_PER_MINUTE)
+				handlebarTime = Math.round(TOTAL_MINUTES - (newY / PX_PER_MINUTE));
+				handlebarTime = Math.max(0, Math.min(handlebarTime, TOTAL_MINUTES));
+				updateMarker();
+
+				if (clientY - rect.top < autoScrollThreshold) {
+					scrollContainer.scrollTop = Math.max(0, scrollContainer.scrollTop - autoScrollStep);
+				} else if (rect.bottom - clientY < autoScrollThreshold) {
+					scrollContainer.scrollTop = Math.min(
+						TIMELINE_HEIGHT - rect.height,
+						scrollContainer.scrollTop + autoScrollStep
+					);
+				}
+			}
+
+			marker.addEventListener("mousedown", (e) => {
+				isDragging = true;
+				e.stopPropagation();
+			});
+			document.addEventListener("mousemove", (e) => {
+				if (isDragging) {
+					handleDragMove(e.clientY);
+				}
+			});
+			document.addEventListener("mouseup", () => {
+				if (isDragging) isDragging = false;
+			});
+
+			marker.addEventListener("touchstart", (e) => {
+				isDragging = true;
+				e.stopPropagation();
+				e.preventDefault();
+			});
+			document.addEventListener("touchmove", (e) => {
+				if (isDragging) {
+					e.preventDefault();
+					handleDragMove(e.touches[0].clientY);
+				}
+			}, {
+				passive: false
+			});
+			document.addEventListener("touchend", () => {
+				if (isDragging) isDragging = false;
+			});
+
+			// ---------------------------
+			// 11. 点击空白区域移动 marker（倒置）
+			// ---------------------------
+			container.addEventListener("click", (e) => {
+				if (e.target.getAttribute("data-draggable") === "true") return;
+				const rect = scrollContainer.getBoundingClientRect();
+				let clickY = e.clientY - rect.top + scrollContainer.scrollTop;
+				clickY = Math.max(0, Math.min(clickY, TIMELINE_HEIGHT));
+				// 根据倒置映射：点击时间 = TOTAL_MINUTES - (clickY / PX_PER_MINUTE)
+				handlebarTime = Math.round(TOTAL_MINUTES - (clickY / PX_PER_MINUTE));
+				updateMarker();
+			});
+
+			// ---------------------------
+			// 12. 示例回调函数（可选）
+			// ---------------------------
+			window.onTimeChange = debounce(function(formattedTime, minuteValue) {
+				const date = moment(`${recordDay} ${formattedTime}`, "YYYYMMDD HH:mm:ss");
+				const time = date.format("YYYY-MM-DD HH:mm:ss");
+				updatePlayback(time);
+			}, 500);
+
+			// ---------------------------
+			// 13. 当窗口大小变化时，更新滚动区域高度
+			// ---------------------------
+			window.addEventListener("resize", () => {
+				const vp = container.parentElement.clientHeight;
+				scrollContainer.style.height = vp + "px";
+			});
+
+			// ---------------------------
+			// 14. 重新渲染录像区间（倒置）
+			// ---------------------------
+			function renderSegments() {
+				segmentsContainer.innerHTML = '';
+				const segments = parseSegments(intervalArray);
+				segments.forEach(seg => {
+					const segDiv = document.createElement("div");
+					segDiv.className = "segment";
+					const segTop = (TOTAL_MINUTES - seg.end) * PX_PER_MINUTE;
+					const segHeight = (seg.end - seg.start + 1) * PX_PER_MINUTE;
+					segDiv.style.top = segTop + 14 + "px";
+					segDiv.style.right = "0";
+					segDiv.style.width = "10px";
+					segDiv.style.height = Math.max(segHeight, 2) + "px";
+					segmentsContainer.appendChild(segDiv);
+				});
+			}
+
+			// 防抖函数封装（可复用）
+			function debounce(func, wait = 300) {
+				let timeout;
+				return function(...args) {
+					clearTimeout(timeout);
+					timeout = setTimeout(() => {
+						func.apply(this, args);
+					}, wait);
+				};
+			}
+
+			function SplicBaseUrlToRemoteUrl(url) {
+				if (!url) return ''
+				const newUrl = url.replace(/^https?:\/\/[^/]+/, baseUrl);
+				return newUrl
+			}
+
+			// 全局加载
+			function showLoading() {
+				document.getElementById('global-loading').style.display = 'flex';
+			}
+
+			function hideLoading() {
+				document.getElementById('global-loading').style.display = 'none';
+			}
+		</script>
+	</body>
+
+</html>

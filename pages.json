@@ -1,0 +1,104 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+		}
+	},
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationStyle": "custom",
+				"enableShareAppMessage": true,
+				"app-plus": {
+					"titleView": false
+				}
+			}
+		},
+		{
+			"path": "pages/index/view",
+			"style": {
+				"navigationStyle": "custom",
+				"enableShareAppMessage": true,
+				"app-plus": {
+					"titleView": false
+				}
+			}
+		},
+		{
+			"path": "pages/my/view",
+			"style": {
+				"navigationStyle": "custom",
+				"enableShareAppMessage": true,
+				"app-plus": {
+					"titleView": false
+				}
+			}
+		},
+		{
+			"path": "pages/record/view",
+			"style": {
+				"navigationStyle": "custom",
+				"enableShareAppMessage": true,
+				"app-plus": {
+					"titleView": false
+				}
+			}
+		},
+		{
+			"path": "pages/play/view",
+			"style": {
+				"navigationBarTitleText": "直播",
+				"enableShareAppMessage": true
+			}
+		},
+		{
+			"path": "pages/channel/view",
+			"style": {
+				"navigationBarTitleText": "通道",
+				"enableShareAppMessage": true
+			}
+		},
+		{
+			"path": "pages/record_paly/view",
+			"style": {
+				"navigationBarTitleText": "录像",
+				"enableShareAppMessage": true
+			}
+		}
+	],
+	"tabBar": {
+		"color": "#666666",
+		"selectedColor": "#578FCA",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
+		"iconfontSrc": "static/icon/iconfont.ttf",
+		"list": [{
+				"pagePath": "pages/index/view",
+				"text": "直播",
+				"iconPath": "/static/image/live.png",
+				"selectedIconPath": "/static/image/live-2.png"
+			},
+			{
+				"pagePath": "pages/record/view",
+				"text": "录像",
+				"iconPath": "/static/image/record.png",
+				"selectedIconPath": "/static/image/record-2.png"
+			},
+			{
+				"pagePath": "pages/my/view",
+				"text": "我的",
+				"iconPath": "/static/image/my.png",
+				"selectedIconPath": "/static/image/my-2.png"
+			}
+		]
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8",
+		"pageOrientation": "portrait"
+	},
+	"uniIdRouter": {}
+}
