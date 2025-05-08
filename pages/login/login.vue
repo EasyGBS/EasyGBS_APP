@@ -26,7 +26,7 @@
 				<FocusInput
 					v-model="formData.password"
 					placeholder="密码"
-					type="safe-password"
+					type="password"
 				/>
 			</view>
 
