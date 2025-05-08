@@ -3,3 +3,7 @@ export const DEFAULT_LIVE_PLAY_URL = 'https://www.easynvr.com/public/html/play_w
 
 // 默认回放播放页地址
 export const DEFAULT_PLAYBACK_URL = 'https://www.easynvr.com/public/html/play_back_wx.html';
+
+export const COLOR = {
+	PRIMARY: '#1aac19',
+}

@@ -14,3 +14,16 @@ export function SplicBaseUrlToRemoteUrl(url) {
 	const newUrl = url.replace(/^https?:\/\/[^/]+/, remoteUrl);
 	return newUrl
 }
+
+/**
+ * 去掉用户输入里可能带的 http:// 或 https:// 前缀，
+ * 并去掉末尾多余的 /
+ */
+export function normalizeDomain(input = '') {
+  let d = input.trim()
+    // 去掉开头的 http:// 或 https://
+    .replace(/^(https?:\/\/)/i, '')
+    // 去掉末尾的 /
+    .replace(/\/+$/, '')
+  return d
+}

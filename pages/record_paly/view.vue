@@ -8,7 +8,7 @@
 import { reactive, computed } from 'vue';
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app';
 import { GetRemoteUrl, GetToken } from '@/service/store/local';
-import { DEFAULT_PLAYBACK_URL } from '@/constants/index';
+import { DEFAULT_PLAYBACK_URL } from '@/constants/index.js';
 const data = reactive({
 	channelId: '',
 	deviceId: '',

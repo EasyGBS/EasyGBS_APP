@@ -8,7 +8,7 @@
 import { onMounted, ref, computed } from 'vue';
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app';
 import { GetRemoteUrl, GetToken } from '@/service/store/local';
-import { DEFAULT_LIVE_PLAY_URL } from '@/constants/index';
+import { DEFAULT_LIVE_PLAY_URL } from '@/constants/index.js';
 
 // 计算最终的播放 URL
 const finalPlaybackUrl = ref('');
