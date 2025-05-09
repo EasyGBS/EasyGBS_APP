@@ -271,8 +271,7 @@
 			const video_codec = document.querySelector('#video_codec');
 			const audio_codec = document.querySelector('#audio_codec');
 			const sample_rate = document.querySelector('#sample_rate');
-			const channel_id = document.querySelector('#channel_id');
-			const device_id = document.querySelector('#device_id');
+			
 
 			let easypro;
 			const $container = document.querySelector('#video');
@@ -281,8 +280,6 @@
 				create();
 				play();
 				videoEvents();
-				channel_id.innerText = channelId;
-				device_id.innerText = deviceId;
 			};
 
 

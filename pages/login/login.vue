@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import FocusInput from '@/components/ui/input_focuse.vue';
 import { onShareAppMessage } from '@dcloudio/uni-app';
 import { COLOR } from '@/constants/index.js';
@@ -72,45 +72,49 @@ import {
 } from '../../service/store/local';
 
 const formData = reactive({
-	domain: 'demo.easynvr.com:10000', // 域名
+	domain: 'demo.easynvr.com:10000',
 	username: 'easynvr',
 	password: 'easynvr',
 });
 
 const isHttps = ref(true);
 
-// 条件编译：在 MP（微信/支付宝/字节…小程序）端，isMp 常量为 true；其它端为 false
+onMounted(() => {
+	if (GetToken()) {
+		uni.switchTab({ url: '/pages/index/view' });
+	}
+
+	const data = GetLoginInfo();
+	if (data.url) {
+		const protocolEndIndex = data.url.indexOf('://');
+		if (protocolEndIndex !== -1) {
+			// 根据协议设置 isHttps
+			isHttps.value = data.url.substring(0, protocolEndIndex) === 'https';
+			// 协议后面全部作为 domain
+			formData.domain = data.url.substring(protocolEndIndex + 3);
+			formData.username = data.username;
+			formData.password = data.password;
+		}
+	}
+});
+
 let isMp = false;
 // #ifdef MP
 isMp = true;
-// #endif
-
-/* #ifdef MP */
 isHttps.value = true;
-/* #endif */
+// #endif
 
 const loading = ref(false);
 
-// 组装完整的 URL
 function getFullUrl() {
 	const raw = formData.domain;
 	const domain = normalizeDomain(raw);
 	if (!domain) return '';
-	let proto = '';
-	// UniApp 条件编译：所有小程序端一律走 https
-	// #ifdef MP
-	proto = 'https://';
-	// #endif
-
-	// #ifndef MP
-	proto = isHttps.value ? 'https://' : 'http://';
-	// #endif
-
+	const proto = isHttps.value ? 'https://' : 'http://';
 	return `${proto}${domain}`;
 }
 
 const login = async () => {
-	console.log('>>url');
 	const url = getFullUrl();
 	if (!url) {
 		uni.showToast({ title: '请输入您的服务公网地址', icon: 'none' });
@@ -139,28 +143,21 @@ const login = async () => {
 		});
 		SetToken(res.token);
 		SetUserInfo(res);
-		uni.switchTab({
-			url: '/pages/index/view',
-		});
+		uni.switchTab({ url: '/pages/index/view' });
 	} catch (err) {
-		let msg = err.msg;
-		if (!msg) {
-			msg = err.errMsg || '登录失败，请检查您的服务地址是否正确';
-		}
-
+		let msg =
+			err.msg || err.errMsg || '登录失败，请检查您的服务地址是否正确';
 		uni.showToast({ title: msg, icon: 'none' });
 	} finally {
-		loading.value = false; // 关闭loading
+		loading.value = false;
 	}
 };
 
-onShareAppMessage(() => {
-	return {
-		title: 'EasyNVR 登录',
-		path: '/pages/login/login',
-		imageUrl: '',
-	};
-});
+onShareAppMessage(() => ({
+	title: 'EasyNVR 登录',
+	path: '/pages/login/login',
+	imageUrl: '',
+}));
 </script>
 
 <style>

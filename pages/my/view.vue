@@ -33,7 +33,7 @@
 					<span class="pr-1">APP版本 v{{ version }}</span>
 				</view>
 				<view class="text-sm text-gray-400 flex items-center">
-					<span class="pr-1">NVR版本 {{ serverVersion }}</span>
+					<span class="pr-1">GBS版本 {{ serverVersion }}</span>
 				</view>
 			</view>
 
