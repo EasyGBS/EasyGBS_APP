@@ -47,8 +47,7 @@ const handleClick = async () => {
 	loading.value = true;
 	try {
 		const url = await findUrl();
-		const safeUrl = encodeURIComponent(url);
-		const navUrl = `/pages/play/view?url=${safeUrl}&channelId=${props.item.id}&deviceId=${props.deviceId}`;
+		const navUrl = `/pages/play/view?url=${url}&channelId=${props.item.id}&deviceId=${props.deviceId}`;
 		uni.navigateTo({
 			url: navUrl,
 		});
