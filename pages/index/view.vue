@@ -23,6 +23,7 @@
 				v-if="loading && !refresherTriggered"
 				animation="gradient"
 				theme="paragraph"
+				:rows="5"
 			/>
 
 			<!-- 设备列表 -->
