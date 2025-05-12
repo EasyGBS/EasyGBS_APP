@@ -24,7 +24,7 @@ const channelId = ref('');
 const deviceId = ref('');
 
 onLoad((options) => {
-	liveUrl.value = SplicBaseUrlToRemoteUrl(options.url) || '';
+	liveUrl.value = SplicBaseUrlToRemoteUrl(decodeURIComponent(options.url || '')) || '';
 	channelId.value = options.channelId || '';
 	deviceId.value = options.deviceId || '';
 });
