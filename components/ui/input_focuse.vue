@@ -69,7 +69,7 @@ function onInput(e) {
 
 .focused {
 	background-color: #f1f4f9;
-	border: 6rpx solid #1c98f8;
+	border: 6rpx solid #38b64a;
 	border-radius: 18rpx;
 	padding: 28rpx 32rpx;
 }

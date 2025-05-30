@@ -72,9 +72,9 @@ import {
 } from '../../service/store/local';
 
 const formData = reactive({
-	domain: 'demo.easynvr.com:10000',
-	username: 'easynvr',
-	password: 'easynvr',
+	domain: 'demo.easygbs.com:10010',
+	username: 'easygbs',
+	password: 'easygbs',
 });
 
 const isHttps = ref(true);
@@ -154,7 +154,7 @@ const login = async () => {
 };
 
 onShareAppMessage(() => ({
-	title: 'EasyNVR 登录',
+	title: 'EasyGBS 登录',
 	path: '/pages/login/login',
 	imageUrl: '',
 }));
