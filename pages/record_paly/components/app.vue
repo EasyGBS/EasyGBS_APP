@@ -145,6 +145,7 @@ import {
 	FindRecordList,
 	FindRecordTimeLine,
 } from '@/service/http/record';
+import { FindUUID } from '@/service/utils/uuid.js';
 
 const advanced = ref([]);
 
@@ -363,6 +364,7 @@ const getRecordList = async () => {
 		source: 'CLOUD',
 		start: startTime.value,
 		end: endTime.value,
+		ssrc: FindUUID(props.channelId),
 	};
 
 	const res = await FindRecordList(data).catch((err) => {
