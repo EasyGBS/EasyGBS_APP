@@ -1,6 +1,6 @@
 # EasyGBS APP
 
-<p style="text-align: center;">   <img src="doc/icon.png" width="150" height="150" style="border-radius: 50%;"> </p> 
+<div style="text-align: center;">   <img src="doc/icon.png" width="150" height="150" style="border-radius: 50%;"> </div> 
 
 
 
@@ -10,7 +10,7 @@ EasyGBS 是一款支持国标GB/T28181及其他几种标准协议，平台支持
 
 Server端下载地址  [EasyGBS Server下载地址](https://easygbs.com/docs/down/EasyGBS%E4%B8%8B%E8%BD%BD)
 
-![License](https://img.shields.io/badge/License-MIT-green)![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38bdf8?logo=tailwindcss)![uni-app](https://img.shields.io/badge/HBuilderX-4.x-green)![uni-app](https://img.shields.io/badge/Vue.js-3.x-green)
+![License](https://img.shields.io/badge/License-MIT-green)&nbsp;&nbsp;&nbsp;![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38bdf8?logo=tailwindcss)&nbsp;&nbsp;&nbsp;![uni-app](https://img.shields.io/badge/HBuilderX-4.x-green)&nbsp;&nbsp;&nbsp;![uni-app](https://img.shields.io/badge/Vue.js-3.x-green)
 
 <details>
   <summary style="color:blue">点击查看项目截图</summary>
