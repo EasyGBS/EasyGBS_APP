@@ -1,8 +1,9 @@
 # EasyGBS APP
 
-<div style="text-align: center;">   <img src="doc/icon.png" width="150" height="150" style="border-radius: 50%;"> </div> 
-
-
+<p align="center">
+  <img src="doc/icon.png" width="150" height="150" alt="图标" 
+       style="margin: 0 auto; display: inline-block; overflow: hidden;">
+</p>
 
 EasyGBS 是一款支持国标GB/T28181及其他几种标准协议，平台支持海康、大华、宇视等各品牌IPC、NVR接入，并对接入的视频资源进行统一管理，视频能力可覆盖安防行业所有需求，提供 `实时监控` `云端录像` `AI视频分析` `告警上报` `语音对讲` `平台级联` 等功能的音视频流媒体聚合服务平台。
 
