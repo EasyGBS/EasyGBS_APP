@@ -9,7 +9,7 @@ import {
 
 // 获取云存录像列表
 export async function FindRecords() {
-	return await GET('/records/cloud/channels')
+	return await GET('/records/cloud/channels',{page:1,size:200})
 }
 
 // 获取有录像的日期
