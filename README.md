@@ -64,6 +64,10 @@ npm run tailwind
 └─ components                     // 公共组件
 ```
 
+## 下载地址
+
+https://github.com/EasyGBS/EasyGBS_APP/releases
+
 ## License
 
 [MIT](https://github.com/LunaTechLab/MoonTV/blob/main/LICENSE) © 2025 EasyGBS APP
