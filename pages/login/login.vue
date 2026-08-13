@@ -137,7 +137,8 @@ const login = async () => {
 	});
 	try {
 		const res = await Login({
-			url,
+			captcha:"",
+			captcha_id:0,
 			username: formData.username,
 			password: formData.password,
 		});
